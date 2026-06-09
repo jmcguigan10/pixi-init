@@ -1,6 +1,7 @@
 # Pixi-managed environment
 .pixi/
 pixi.toml
+pixi.lock
 
 # Project-local installed binaries and manual build prefixes
 .local/
