@@ -88,9 +88,22 @@ def capture(
         env=env,
         text=True,
         stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        check=True,
+        stderr=subprocess.PIPE,
     )
+
+    if result.stderr:
+        print(result.stderr.rstrip(), file=sys.stderr)
+
+    if result.returncode != 0:
+        if result.stdout:
+            print(result.stdout.rstrip())
+        raise subprocess.CalledProcessError(
+            result.returncode,
+            rendered,
+            output=result.stdout,
+            stderr=result.stderr,
+        )
+
     return result.stdout.strip()
 
 
