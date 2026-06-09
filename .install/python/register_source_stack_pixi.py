@@ -91,18 +91,10 @@ def activation_env(root: Path) -> dict[str, str]:
         [env_path(root, path) for path in existing_cmake_prefixes] + ["$CMAKE_PREFIX_PATH"]
     )
 
-    ld_library_path = (
-        f"{lib_value}:$LD_LIBRARY_PATH" if lib_value else "$LD_LIBRARY_PATH"
-    )
-    dyld_library_path = (
-        f"{lib_value}:$DYLD_LIBRARY_PATH" if lib_value else "$DYLD_LIBRARY_PATH"
-    )
     library_path = f"{lib_value}:$LIBRARY_PATH" if lib_value else "$LIBRARY_PATH"
 
     return {
         "PATH": quote_env(path_value),
-        "LD_LIBRARY_PATH": quote_env(ld_library_path),
-        "DYLD_LIBRARY_PATH": quote_env(dyld_library_path),
         "CPATH": quote_env(include_value),
         "LIBRARY_PATH": quote_env(library_path),
         "CMAKE_PREFIX_PATH": quote_env(cmake_prefix_value),
@@ -154,6 +146,26 @@ def upsert_key(text: str, section: str, key: str, value: str) -> str:
     return before + body + after
 
 
+def remove_managed_key(text: str, section: str, key: str) -> str:
+    header_pattern = rf"(?m)^\[{re.escape(section)}\]\s*$"
+    header_match = re.search(header_pattern, text)
+
+    if not header_match:
+        return text
+
+    start = header_match.end()
+    next_section = re.search(r"(?m)^\[[^\]]+\]\s*$", text[start:])
+    end = start + next_section.start() if next_section else len(text)
+
+    before = text[:start]
+    body = text[start:end]
+    after = text[end:]
+    key_pattern = rf"(?m)^[ \t]*{re.escape(key)}[ \t]*=.*\$PIXI_PROJECT_ROOT.*\n?"
+    body = re.sub(key_pattern, "", body)
+
+    return before + body + after
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", default=None)
@@ -165,6 +177,8 @@ def main() -> None:
     text = manifest.read_text()
 
     text = ensure_section(text, "activation.env")
+    for key in ("LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH"):
+        text = remove_managed_key(text, "activation.env", key)
     for key, value in activation_env(root).items():
         text = upsert_key(text, "activation.env", key, value)
 
