@@ -484,6 +484,7 @@ def build_genfit(
         [env_root],
         [env_root, prefixes["genfit"]],
     ) + [
+        "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
         "-DBUILD_TESTING=OFF",
         f"-DROOT_DIR={root_dir}",
     ]
