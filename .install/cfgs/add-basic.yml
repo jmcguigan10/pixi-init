@@ -1,10 +1,21 @@
 dependencies:
   - python=3.12
+  - git
   - cmake
   - ninja
   - make
   - pkg-config
   - gnuconfig
+  - boost-cpp
+  - fftw
+  - freetype
+  - ftgl
+  - gsl
+  - libexpat
+  - libxml2
+  - openssl
+  - xz
+  - zlib
   - xerces-c
 
   # Not needed for XQilla itself, but keep if your project needs MPI.

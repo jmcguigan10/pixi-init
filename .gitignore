@@ -8,6 +8,10 @@ pixi.lock
 
 # Downloaded/extracted source trees
 .install/src/
+.install/build/
+.install/downloads/
+.install/logs/
+.install/state/
 
 # Project-local binary installs
 .bin/*
@@ -16,4 +20,3 @@ pixi.lock
 # Usual trash
 __pycache__/
 *.pyc
-

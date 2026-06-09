@@ -70,8 +70,11 @@ fi
 "$ROOT/.install/shell/add-basic.sh"
 "$ROOT/.install/shell/build-xqilla.sh"
 "$ROOT/.install/shell/verify-xqilla.sh"
+"$ROOT/.install/shell/register-source-stack-pixi.sh" --root "$ROOT"
 
 echo
 echo "Bootstrap complete."
 echo "Try:"
 echo "  $PIXI run xqilla -h"
+echo "  $PIXI run source-stack"
+echo "  $PIXI run verify-source-stack"
