@@ -1,0 +1,16 @@
+# Pixi-managed environment
+.pixi/
+
+# Project-local installed binaries and manual build prefixes
+.local/
+
+# Downloaded/extracted source trees
+.install/src/
+
+# Project-local binary installs
+.bin/*
+!.bin/.gitkeep
+
+# Usual trash
+__pycache__/
+*.pyc

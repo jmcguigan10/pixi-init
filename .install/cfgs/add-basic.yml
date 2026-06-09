@@ -1,0 +1,19 @@
+dependencies:
+  - python=3.12
+  - cmake
+  - ninja
+  - make
+  - pkg-config
+  - xerces-c
+
+  # Keep GCC pinned because XQilla is old C++ and modern compiler defaults are not its friend.
+  - gcc=12.*
+  - cxx-compiler
+
+  # Not needed for XQilla itself, but keep if your project needs MPI.
+  - openmpi
+
+pypi:
+  # Example:
+  # - numpy
+  # - pandas
