@@ -49,32 +49,20 @@ fi
 
 if [[ ! -f "$ROOT/pixi.toml" ]]; then
     PROJECT_NAME="$(basename "$ROOT")"
-    detect_platform >/dev/null
+    PLATFORM="$(detect_platform)"
 
     cat > "$ROOT/pixi.toml" <<EOF
 [workspace]
 channels = ["conda-forge"]
 name = "$PROJECT_NAME"
-platforms = ["osx-arm64", "osx-64", "linux-64", "linux-aarch64"]
+platforms = ["$PLATFORM"]
 version = "0.1.0"
 
 [tasks]
 
 [dependencies]
 
-[target.osx-arm64.dependencies]
-c-compiler = "*"
-cxx-compiler = "*"
-
-[target.osx-64.dependencies]
-c-compiler = "*"
-cxx-compiler = "*"
-
-[target.linux-64.dependencies]
-c-compiler = "*"
-cxx-compiler = "*"
-
-[target.linux-aarch64.dependencies]
+[target.$PLATFORM.dependencies]
 c-compiler = "*"
 cxx-compiler = "*"
 EOF

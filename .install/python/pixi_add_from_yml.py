@@ -81,7 +81,7 @@ def strip_inline_comment(line: str) -> str:
     # Simple config parser, not a full YAML parser.
     # Good enough for:
     #   dependencies:
-    #     - python=3.12
+    #     - root=6.36.10
     #     - "cmake>=3.30"
     quote: str | None = None
     out: list[str] = []

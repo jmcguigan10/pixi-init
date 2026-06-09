@@ -1,5 +1,4 @@
 dependencies:
-  - python=3.12
   - root=6.36.10
   - git
   - cmake
@@ -8,19 +7,10 @@ dependencies:
   - pkg-config
   - gnuconfig
   - boost
-  - fftw
-  - freetype
   - ftgl
   - gsl
   - libexpat
-  - libxml2
-  - openssl
-  - xz
-  - zlib
   - xerces-c
-
-  # Not needed for XQilla itself, but keep if your project needs MPI.
-  - openmpi
 
 target.osx-64.dependencies:
   - c-compiler
