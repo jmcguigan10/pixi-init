@@ -4,14 +4,29 @@ dependencies:
   - ninja
   - make
   - pkg-config
+  - gnuconfig
   - xerces-c
-
-  # Keep GCC pinned because XQilla is old C++ and modern compiler defaults are not its friend.
-  - gcc=12.*
-  - cxx-compiler
 
   # Not needed for XQilla itself, but keep if your project needs MPI.
   - openmpi
+
+target.osx-64.dependencies:
+  - c-compiler
+  - cxx-compiler
+
+target.osx-arm64.dependencies:
+  - c-compiler
+  - cxx-compiler
+
+target.linux-64.dependencies:
+  # Keep GCC pinned because XQilla is old C++ and modern compiler defaults are not its friend.
+  - gcc=12.*
+  - gxx=12.*
+
+target.linux-aarch64.dependencies:
+  # Keep GCC pinned because XQilla is old C++ and modern compiler defaults are not its friend.
+  - gcc=12.*
+  - gxx=12.*
 
 pypi:
   # Example:

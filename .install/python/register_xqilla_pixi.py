@@ -10,9 +10,10 @@ from common import manifest_path, project_root
 
 ACTIVATION_ENV = {
     "PATH": '"$PIXI_PROJECT_ROOT/.local/xqilla/bin:$PATH"',
-    "LD_LIBRARY_PATH": '"$PIXI_PROJECT_ROOT/.local/xqilla/lib:$LD_LIBRARY_PATH"',
+    "LD_LIBRARY_PATH": '"$PIXI_PROJECT_ROOT/.local/xqilla/lib:$PIXI_PROJECT_ROOT/.pixi/envs/default/lib:$LD_LIBRARY_PATH"',
+    "DYLD_LIBRARY_PATH": '"$PIXI_PROJECT_ROOT/.local/xqilla/lib:$PIXI_PROJECT_ROOT/.pixi/envs/default/lib:$DYLD_LIBRARY_PATH"',
     "CPATH": '"$PIXI_PROJECT_ROOT/.local/xqilla/include:$CPATH"',
-    "LIBRARY_PATH": '"$PIXI_PROJECT_ROOT/.local/xqilla/lib:$LIBRARY_PATH"',
+    "LIBRARY_PATH": '"$PIXI_PROJECT_ROOT/.local/xqilla/lib:$PIXI_PROJECT_ROOT/.pixi/envs/default/lib:$LIBRARY_PATH"',
 }
 
 TASKS = {
@@ -48,7 +49,7 @@ def upsert_key(text: str, section: str, key: str, value: str) -> str:
     after = text[end:]
 
     line = f"{key} = {value}"
-    key_pattern = rf"(?m)^\s*{re.escape(key)}\s*=.*$"
+    key_pattern = rf"(?m)^[ \t]*{re.escape(key)}[ \t]*=.*$"
 
     if re.search(key_pattern, body):
         body = re.sub(key_pattern, line, body)
