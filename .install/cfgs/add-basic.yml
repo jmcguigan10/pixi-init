@@ -7,9 +7,9 @@ dependencies:
   - pkg-config
   - gnuconfig
   - boost
+  - expat
   - ftgl
   - gsl
-  - libexpat
   - xerces-c
 
 target.osx-64.dependencies:

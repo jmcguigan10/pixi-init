@@ -71,6 +71,7 @@ else
     echo "pixi.toml already exists"
 fi
 
+"$ROOT/.install/shell/register-source-stack-pixi.sh" --root "$ROOT"
 "$ROOT/.install/shell/add-basic.sh"
 "$ROOT/.install/shell/build-xqilla.sh"
 "$ROOT/.install/shell/verify-xqilla.sh"

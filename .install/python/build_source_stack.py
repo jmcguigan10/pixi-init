@@ -15,6 +15,7 @@ from common import manifest_path, pixi_env_path, pixi_path, project_root, run
 
 
 COMPONENTS = ("clhep", "geant4", "genfit")
+DEFAULT_AUTO_JOB_LIMIT = 16
 
 
 def strip_inline_comment(line: str) -> str:
@@ -72,6 +73,24 @@ def path_from_config(root: Path, config: dict[str, str], key: str) -> Path:
     value = config[key]
     path = Path(value)
     return path if path.is_absolute() else root / path
+
+
+def resolve_jobs(value: str) -> str:
+    if value != "auto":
+        return value
+
+    limit_value = os.environ.get("SOURCE_STACK_AUTO_JOBS_MAX", str(DEFAULT_AUTO_JOB_LIMIT))
+    try:
+        limit = int(limit_value)
+    except ValueError as exc:
+        raise SystemExit(
+            f"SOURCE_STACK_AUTO_JOBS_MAX must be an integer, got: {limit_value}"
+        ) from exc
+
+    if limit < 1:
+        raise SystemExit("SOURCE_STACK_AUTO_JOBS_MAX must be at least 1")
+
+    return str(min(os.cpu_count() or 2, limit))
 
 
 def capture(
@@ -274,6 +293,16 @@ def build_env(root: Path, env_root: Path, prefixes: dict[str, Path]) -> dict[str
     return env
 
 
+def git_env(env: dict[str, str]) -> dict[str, str]:
+    sanitized = env.copy()
+
+    for key in ("LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH"):
+        sanitized.pop(key, None)
+
+    sanitized["GIT_SSH_COMMAND"] = "env -u LD_LIBRARY_PATH -u DYLD_LIBRARY_PATH ssh"
+    return sanitized
+
+
 def cmake_prefix_value(paths: list[Path]) -> str:
     return ";".join(str(path) for path in paths if path.exists())
 
@@ -318,6 +347,7 @@ def prepare_git_source(
     url = config[f"source.{component}.url"]
     ref = config[f"source.{component}.ref"]
     expected_sha = config[f"source.{component}.sha"]
+    sanitized_env = git_env(env)
 
     if not source_root.exists():
         source_root.parent.mkdir(parents=True, exist_ok=True)
@@ -325,15 +355,33 @@ def prepare_git_source(
             pixi,
             manifest,
             ["git", "clone", "--branch", ref, "--depth", "1", url, source_root],
-            env=env,
+            env=sanitized_env,
         )
     elif not (source_root / ".git").exists():
         raise SystemExit(f"Source path exists but is not a git checkout: {source_root}")
     else:
-        pixi_run(pixi, manifest, ["git", "fetch", "--force", "origin", ref], cwd=source_root, env=env)
+        pixi_run(
+            pixi,
+            manifest,
+            ["git", "fetch", "--force", "origin", ref],
+            cwd=source_root,
+            env=sanitized_env,
+        )
 
-    pixi_run(pixi, manifest, ["git", "checkout", "--force", expected_sha], cwd=source_root, env=env)
-    actual_sha = pixi_capture(pixi, manifest, ["git", "rev-parse", "HEAD"], cwd=source_root, env=env)
+    pixi_run(
+        pixi,
+        manifest,
+        ["git", "checkout", "--force", expected_sha],
+        cwd=source_root,
+        env=sanitized_env,
+    )
+    actual_sha = pixi_capture(
+        pixi,
+        manifest,
+        ["git", "rev-parse", "HEAD"],
+        cwd=source_root,
+        env=sanitized_env,
+    )
 
     if actual_sha != expected_sha:
         raise SystemExit(
@@ -562,7 +610,14 @@ def main() -> None:
     )
     parser.add_argument("--root", default=None)
     parser.add_argument("--config", default=None)
-    parser.add_argument("--jobs", default=None)
+    parser.add_argument(
+        "--jobs",
+        default=None,
+        help=(
+            "Parallel build jobs. Overrides source-stack.yml. "
+            f"When set to auto, caps at SOURCE_STACK_AUTO_JOBS_MAX or {DEFAULT_AUTO_JOB_LIMIT}."
+        ),
+    )
     args = parser.parse_args()
 
     root = Path(args.root).resolve() if args.root else project_root()
@@ -577,9 +632,8 @@ def main() -> None:
     build_dir = path_from_config(root, config, "build_dir")
     prefixes = {component: path_from_config(root, config, f"prefix.{component}") for component in COMPONENTS}
 
-    jobs = args.jobs or config["jobs"]
-    if jobs == "auto":
-        jobs = str(os.cpu_count() or 2)
+    jobs = resolve_jobs(args.jobs or config["jobs"])
+    print(f"Using {jobs} parallel build jobs.")
 
     deps_script = root / ".install" / "python" / "pixi_add_from_yml.py"
     run([
