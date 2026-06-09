@@ -39,21 +39,20 @@ def activation_env(root: Path) -> dict[str, str]:
     prefixes = {
         "clhep": root / ".local" / "clhep",
         "geant4": root / ".local" / "geant4",
-        "root": root / ".local" / "root",
         "genfit": root / ".local" / "genfit",
         "xqilla": root / ".local" / "xqilla",
         "pixi": root / ".pixi" / "envs" / "default",
     }
     bin_paths = [
-        prefixes["root"] / "bin",
+        prefixes["pixi"] / "bin",
         prefixes["geant4"] / "bin",
         prefixes["clhep"] / "bin",
         prefixes["genfit"] / "bin",
         prefixes["xqilla"] / "bin",
     ]
     lib_paths = [
-        prefixes["root"] / "lib",
-        prefixes["root"] / "lib" / "root",
+        prefixes["pixi"] / "lib",
+        prefixes["pixi"] / "lib" / "root",
         prefixes["geant4"] / "lib",
         prefixes["geant4"] / "lib64",
         prefixes["clhep"] / "lib",
@@ -61,22 +60,21 @@ def activation_env(root: Path) -> dict[str, str]:
         prefixes["genfit"] / "lib",
         prefixes["genfit"] / "lib64",
         prefixes["xqilla"] / "lib",
-        prefixes["pixi"] / "lib",
     ]
     include_paths = [
-        prefixes["root"] / "include",
+        prefixes["pixi"] / "include",
+        prefixes["pixi"] / "include" / "root",
         prefixes["geant4"] / "include",
         prefixes["clhep"] / "include",
         prefixes["genfit"] / "include",
         prefixes["xqilla"] / "include",
     ]
     cmake_prefixes = [
-        prefixes["root"],
+        prefixes["pixi"],
         prefixes["geant4"],
         prefixes["clhep"],
         prefixes["genfit"],
         prefixes["xqilla"],
-        prefixes["pixi"],
     ]
 
     existing_bin_paths = [path for path in bin_paths if path.exists()]
@@ -108,10 +106,10 @@ def activation_env(root: Path) -> dict[str, str]:
         "CPATH": quote_env(include_value),
         "LIBRARY_PATH": quote_env(library_path),
         "CMAKE_PREFIX_PATH": quote_env(cmake_prefix_value),
-        "ROOTSYS": quote_env(env_path(root, prefixes["root"])),
+        "ROOTSYS": quote_env(env_path(root, prefixes["pixi"])),
         "CLHEP_DIR": quote_env(env_path(root, find_cmake_config(prefixes["clhep"], "CLHEP"))),
         "Geant4_DIR": quote_env(env_path(root, find_cmake_config(prefixes["geant4"], "Geant4"))),
-        "ROOT_DIR": quote_env(env_path(root, find_cmake_config(prefixes["root"], "ROOT"))),
+        "ROOT_DIR": quote_env(env_path(root, find_cmake_config(prefixes["pixi"], "ROOT"))),
         "GENFIT": quote_env(env_path(root, prefixes["genfit"])),
     }
 

@@ -42,6 +42,21 @@ def detect_platform() -> str:
     raise SystemExit(f"Unsupported platform: {system}:{machine}")
 
 
+def manifest_platforms(path: Path, fallback: str) -> list[str]:
+    text = path.read_text()
+    match = re.search(r'(?m)^platforms\s*=\s*\[(.*?)\]\s*$', text)
+    if not match:
+        return [fallback]
+
+    platforms = [
+        value
+        for quoted in re.findall(r'"([^"]+)"|\'([^\']+)\'', match.group(1))
+        for value in quoted
+        if value
+    ]
+    return platforms or [fallback]
+
+
 def parse_section(section: str) -> tuple[str, str | None] | None:
     kind = SECTION_ALIASES.get(section)
     if kind:
@@ -173,8 +188,31 @@ def main() -> None:
     parsed = parse_simple_yml(config)
     dependencies = parsed.dependencies
     pypi_dependencies = parsed.pypi
-    target_dependencies = parsed.target_dependencies.get(platform, [])
-    target_pypi_dependencies = parsed.target_pypi.get(platform, [])
+    platforms = set(manifest_platforms(manifest, platform))
+    target_dependency_items = [
+        (target_platform, dependencies)
+        for target_platform, dependencies in sorted(parsed.target_dependencies.items())
+        if target_platform in platforms and dependencies
+    ]
+    target_pypi_items = [
+        (target_platform, dependencies)
+        for target_platform, dependencies in sorted(parsed.target_pypi.items())
+        if target_platform in platforms and dependencies
+    ]
+
+    if target_dependency_items:
+        for target_platform, target_dependencies in target_dependency_items:
+            run([
+                pixi,
+                "add",
+                "--manifest-path",
+                manifest,
+                "--platform",
+                target_platform,
+                *target_dependencies,
+            ])
+    else:
+        print("No platform-specific conda dependencies listed for configured platforms.")
 
     if dependencies:
         run([
@@ -186,19 +224,6 @@ def main() -> None:
         ])
     else:
         print("No conda dependencies listed.")
-
-    if target_dependencies:
-        run([
-            pixi,
-            "add",
-            "--manifest-path",
-            manifest,
-            "--platform",
-            platform,
-            *target_dependencies,
-        ])
-    else:
-        print(f"No platform-specific conda dependencies listed for {platform}.")
 
     if pypi_dependencies:
         run([
@@ -212,19 +237,20 @@ def main() -> None:
     else:
         print("No PyPI dependencies listed.")
 
-    if target_pypi_dependencies:
-        run([
-            pixi,
-            "add",
-            "--manifest-path",
-            manifest,
-            "--platform",
-            platform,
-            "--pypi",
-            *target_pypi_dependencies,
-        ])
+    if target_pypi_items:
+        for target_platform, target_pypi_dependencies in target_pypi_items:
+            run([
+                pixi,
+                "add",
+                "--manifest-path",
+                manifest,
+                "--platform",
+                target_platform,
+                "--pypi",
+                *target_pypi_dependencies,
+            ])
     else:
-        print(f"No platform-specific PyPI dependencies listed for {platform}.")
+        print("No platform-specific PyPI dependencies listed for configured platforms.")
 
 
 if __name__ == "__main__":

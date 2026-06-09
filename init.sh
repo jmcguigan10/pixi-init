@@ -49,18 +49,34 @@ fi
 
 if [[ ! -f "$ROOT/pixi.toml" ]]; then
     PROJECT_NAME="$(basename "$ROOT")"
-    PLATFORM="$(detect_platform)"
+    detect_platform >/dev/null
 
     cat > "$ROOT/pixi.toml" <<EOF
 [workspace]
 channels = ["conda-forge"]
 name = "$PROJECT_NAME"
-platforms = ["$PLATFORM"]
+platforms = ["osx-arm64", "osx-64", "linux-64", "linux-aarch64"]
 version = "0.1.0"
 
 [tasks]
 
 [dependencies]
+
+[target.osx-arm64.dependencies]
+c-compiler = "*"
+cxx-compiler = "*"
+
+[target.osx-64.dependencies]
+c-compiler = "*"
+cxx-compiler = "*"
+
+[target.linux-64.dependencies]
+c-compiler = "*"
+cxx-compiler = "*"
+
+[target.linux-aarch64.dependencies]
+c-compiler = "*"
+cxx-compiler = "*"
 EOF
     echo "Created pixi.toml"
 else
@@ -76,5 +92,5 @@ echo
 echo "Bootstrap complete."
 echo "Try:"
 echo "  $PIXI run xqilla -h"
-echo "  $PIXI run source-stack"
+echo "  $PIXI run source-stack  # builds CLHEP, Geant4, and GenFit; ROOT comes from Pixi"
 echo "  $PIXI run verify-source-stack"

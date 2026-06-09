@@ -8,7 +8,6 @@ state_dir: .install/state
 
 prefix.clhep: .local/clhep
 prefix.geant4: .local/geant4
-prefix.root: .local/root
 prefix.genfit: .local/genfit
 
 source.clhep.kind: git
@@ -21,11 +20,6 @@ source.geant4.url: https://gitlab.cern.ch/geant4/geant4/-/archive/v11.4.1/geant4
 source.geant4.version: 11.4.1
 source.geant4.root: geant4-v11.4.1
 source.geant4.tarball: geant4-v11.4.1.tar.gz
-
-source.root.kind: git
-source.root.url: https://github.com/root-project/root.git
-source.root.ref: v6-34-06
-source.root.sha: f6c0ab822d06c0b622770edf0d9306529c48d8f5
 
 source.genfit.kind: git
 source.genfit.url: git@github.com:MUSE-EXP/Genfit.git

@@ -14,7 +14,7 @@ from pathlib import Path
 from common import manifest_path, pixi_env_path, pixi_path, project_root, run
 
 
-COMPONENTS = ("clhep", "geant4", "root", "genfit")
+COMPONENTS = ("clhep", "geant4", "genfit")
 
 
 def strip_inline_comment(line: str) -> str:
@@ -160,7 +160,7 @@ def existing_lib_dirs(paths: list[Path]) -> list[Path]:
     seen: set[Path] = set()
 
     for prefix in paths:
-        for name in ("lib", "lib64"):
+        for name in ("lib", "lib64", "lib/root"):
             candidate = prefix / name
             if candidate.exists() and candidate not in seen:
                 out.append(candidate)
@@ -192,7 +192,6 @@ def build_env(root: Path, env_root: Path, prefixes: dict[str, Path]) -> dict[str
         root / ".local" / "xqilla",
         prefixes["clhep"],
         prefixes["geant4"],
-        prefixes["root"],
         prefixes["genfit"],
     ]
     bin_values = [env_root / "bin", *(prefix / "bin" for prefix in prefix_values[1:])]
@@ -227,7 +226,7 @@ def build_env(root: Path, env_root: Path, prefixes: dict[str, Path]) -> dict[str
         [str(path) for path in lib_values]
         + existing_env_entries(env.get("LIBRARY_PATH", ""))
     )
-    env["ROOTSYS"] = str(prefixes["root"])
+    env["ROOTSYS"] = str(env_root)
     env["GENFIT"] = str(prefixes["genfit"])
     env["GIT_TERMINAL_PROMPT"] = "0"
 
@@ -271,7 +270,7 @@ def cmake_rpath_value(paths: list[Path]) -> str:
     seen: set[Path] = set()
 
     for prefix in paths:
-        for name in ("lib", "lib64"):
+        for name in ("lib", "lib64", "lib/root"):
             candidate = prefix / name
             if candidate not in seen:
                 rpaths.append(candidate)
@@ -464,40 +463,6 @@ def build_geant4(
     configure_build_install("geant4", source_root, build_root, prefixes["geant4"], args, jobs, pixi, manifest, env)
 
 
-def build_root(
-    source_root: Path,
-    build_root: Path,
-    prefixes: dict[str, Path],
-    config: dict[str, str],
-    jobs: str,
-    pixi: Path,
-    manifest: Path,
-    env: dict[str, str],
-    env_root: Path,
-) -> None:
-    args = common_cmake_args(
-        prefixes["root"],
-        config,
-        [env_root, prefixes["clhep"], prefixes["geant4"]],
-        [prefixes["root"]],
-    ) + [
-        "-Dminuit2=ON",
-        "-Dxml=ON",
-        "-Dgdml=ON",
-        "-Dopengl=OFF",
-        "-Dx11=OFF",
-        "-Dpyroot=OFF",
-        "-Droot7=OFF",
-        "-Dwebgui=OFF",
-        "-Dxrootd=OFF",
-        "-Ddavix=OFF",
-        "-Dbuiltin_freetype=OFF",
-        "-Dbuiltin_ftgl=OFF",
-        "-Dbuiltin_gsl=OFF",
-    ]
-    configure_build_install("root", source_root, build_root, prefixes["root"], args, jobs, pixi, manifest, env)
-
-
 def build_genfit(
     source_root: Path,
     build_root: Path,
@@ -509,12 +474,15 @@ def build_genfit(
     env: dict[str, str],
     env_root: Path,
 ) -> None:
-    root_dir = find_cmake_config(prefixes["root"], "ROOT") or prefixes["root"]
+    root_dir = find_cmake_config(env_root, "ROOT")
+    if not root_dir:
+        raise SystemExit(f"Missing ROOTConfig.cmake under Pixi environment: {env_root}")
+
     args = common_cmake_args(
         prefixes["genfit"],
         config,
-        [env_root, prefixes["root"]],
-        [prefixes["root"], prefixes["genfit"]],
+        [env_root],
+        [env_root, prefixes["genfit"]],
     ) + [
         "-DBUILD_TESTING=OFF",
         f"-DROOT_DIR={root_dir}",
@@ -531,7 +499,6 @@ def write_state(root: Path, config: dict[str, str], prefixes: dict[str, Path], e
         root / ".local" / "xqilla",
         prefixes["clhep"],
         prefixes["geant4"],
-        prefixes["root"],
         prefixes["genfit"],
     ]
     genfit_library = find_first(prefixes["genfit"], [
@@ -548,7 +515,10 @@ def write_state(root: Path, config: dict[str, str], prefixes: dict[str, Path], e
     state = {
         "build_type": config["build_type"],
         "cxx_standard": int(config["cxx_standard"]),
-        "prefixes": {name: str(path) for name, path in prefixes.items()},
+        "prefixes": {
+            **{name: str(path) for name, path in prefixes.items()},
+            "root": str(env_root),
+        },
         "cmake_prefix_path": cmake_prefix_value(cmake_prefixes),
         "muse_cmake_hints": [
             f"-DCMAKE_CXX_STANDARD={config['cxx_standard']}",
@@ -639,8 +609,6 @@ def main() -> None:
             build_clhep(source_root, component_build_dir, prefixes, config, jobs, pixi, manifest, env, env_root)
         elif component == "geant4":
             build_geant4(source_root, component_build_dir, prefixes, config, jobs, pixi, manifest, env, env_root)
-        elif component == "root":
-            build_root(source_root, component_build_dir, prefixes, config, jobs, pixi, manifest, env, env_root)
         elif component == "genfit":
             build_genfit(source_root, component_build_dir, prefixes, config, jobs, pixi, manifest, env, env_root)
 

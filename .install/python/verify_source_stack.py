@@ -7,11 +7,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-from common import manifest_path, pixi_path, project_root, run
+from common import manifest_path, pixi_env_path, pixi_path, project_root
 from build_source_stack import find_cmake_config, find_first, parse_flat_config, path_from_config
 
 
-COMPONENTS = ("clhep", "geant4", "root", "genfit")
+COMPONENTS = ("clhep", "geant4", "genfit")
 
 
 def capture(cmd: list[str | Path]) -> str:
@@ -63,6 +63,7 @@ def main() -> None:
     root = project_root()
     pixi = pixi_path(root)
     manifest = manifest_path(root)
+    root_prefix = pixi_env_path(root)
     config = parse_flat_config(root / ".install" / "cfgs" / "source-stack.yml")
     prefixes = {component: path_from_config(root, config, f"prefix.{component}") for component in COMPONENTS}
     state_path = path_from_config(root, config, "state_dir") / "source-stack.json"
@@ -103,8 +104,13 @@ def main() -> None:
     if geant4_version.strip() != "11.4.1":
         raise SystemExit(f"Expected Geant4 11.4.1, got {geant4_version}")
 
-    require_path(prefixes["root"], "ROOT prefix")
-    root_config = prefixes["root"] / "bin" / "root-config"
+    require_path(root_prefix, "Pixi ROOT prefix")
+    root_cmake_config = find_cmake_config(root_prefix, "ROOT")
+    if not root_cmake_config:
+        raise SystemExit(f"Missing ROOTConfig.cmake under {root_prefix}")
+    print(f"Found ROOT CMake config: {root_cmake_config}")
+
+    root_config = root_prefix / "bin" / "root-config"
     require_path(root_config, "root-config")
     root_version = capture([
         pixi,
@@ -114,8 +120,8 @@ def main() -> None:
         root_config,
         "--version",
     ])
-    if root_version.strip() != "6.34.06":
-        raise SystemExit(f"Expected ROOT 6.34.06, got {root_version}")
+    if root_version.strip() != "6.36.10":
+        raise SystemExit(f"Expected ROOT 6.36.10, got {root_version}")
 
     root_features = capture([
         pixi,
@@ -125,9 +131,23 @@ def main() -> None:
         root_config,
         "--features",
     ])
-    for feature in ("xml", "gdml", "minuit2"):
+    for feature in ("xml", "gdml"):
         if feature not in root_features.split():
             raise SystemExit(f"ROOT feature missing: {feature}")
+    minuit2_library = find_first(root_prefix, [
+        "lib/libMinuit2.dylib",
+        "lib/libMinuit2.so",
+        "lib/libMinuit2.so.*",
+        "lib/root/libMinuit2.dylib",
+        "lib/root/libMinuit2.so",
+        "lib/root/libMinuit2.so.*",
+        "lib64/libMinuit2.dylib",
+        "lib64/libMinuit2.so",
+        "lib64/libMinuit2.so.*",
+    ])
+    if not minuit2_library:
+        raise SystemExit(f"Missing ROOT Minuit2 library under {root_prefix}")
+    print(f"Found ROOT Minuit2 library: {minuit2_library}")
 
     require_path(prefixes["genfit"], "GenFit prefix")
     genfit_library = find_first(prefixes["genfit"], [
@@ -147,7 +167,7 @@ def main() -> None:
 
     for candidate in [
         geant4_library,
-        prefixes["root"] / "bin" / "root",
+        root_prefix / "bin" / "root",
         genfit_library,
     ]:
         if candidate.exists():

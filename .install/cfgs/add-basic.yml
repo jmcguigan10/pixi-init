@@ -1,12 +1,13 @@
 dependencies:
   - python=3.12
+  - root=6.36.10
   - git
   - cmake
   - ninja
   - make
   - pkg-config
   - gnuconfig
-  - boost-cpp
+  - boost
   - fftw
   - freetype
   - ftgl
@@ -30,14 +31,12 @@ target.osx-arm64.dependencies:
   - cxx-compiler
 
 target.linux-64.dependencies:
-  # Keep GCC pinned because XQilla is old C++ and modern compiler defaults are not its friend.
-  - gcc=12.*
-  - gxx=12.*
+  - c-compiler
+  - cxx-compiler
 
 target.linux-aarch64.dependencies:
-  # Keep GCC pinned because XQilla is old C++ and modern compiler defaults are not its friend.
-  - gcc=12.*
-  - gxx=12.*
+  - c-compiler
+  - cxx-compiler
 
 pypi:
   # Example:
