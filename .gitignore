@@ -1,11 +1,17 @@
 # Pixi-managed environment
 .pixi/
+pixi.toml
+pixi.lock
 
 # Project-local installed binaries and manual build prefixes
 .local/
 
 # Downloaded/extracted source trees
 .install/src/
+.install/build/
+.install/downloads/
+.install/logs/
+.install/state/
 
 # Project-local binary installs
 .bin/*

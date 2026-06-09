@@ -1,0 +1,27 @@
+build_type: Release
+cxx_standard: 20
+jobs: auto
+
+source_dir: .install/src
+build_dir: .install/build
+state_dir: .install/state
+
+prefix.clhep: .local/clhep
+prefix.geant4: .local/geant4
+prefix.genfit: .local/genfit
+
+source.clhep.kind: git
+source.clhep.url: https://gitlab.cern.ch/CLHEP/CLHEP.git
+source.clhep.ref: CLHEP_2_4_7_2
+source.clhep.sha: 10fdf9b342265174b37db3bcb9a1fc79e585fde7
+
+source.geant4.kind: tar
+source.geant4.url: https://gitlab.cern.ch/geant4/geant4/-/archive/v11.4.1/geant4-v11.4.1.tar.gz
+source.geant4.version: 11.4.1
+source.geant4.root: geant4-v11.4.1
+source.geant4.tarball: geant4-v11.4.1.tar.gz
+
+source.genfit.kind: git
+source.genfit.url: git@github.com:MUSE-EXP/Genfit.git
+source.genfit.ref: master
+source.genfit.sha: 56e733ff1eacf76b9f2cf046bb424c228ab57129
