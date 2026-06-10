@@ -200,6 +200,17 @@ def main() -> None:
         if target_platform in platforms and dependencies
     ]
 
+    if dependencies:
+        run([
+            pixi,
+            "add",
+            "--manifest-path",
+            manifest,
+            *dependencies,
+        ])
+    else:
+        print("No conda dependencies listed.")
+
     if target_dependency_items:
         for target_platform, target_dependencies in target_dependency_items:
             run([
@@ -213,17 +224,6 @@ def main() -> None:
             ])
     else:
         print("No platform-specific conda dependencies listed for configured platforms.")
-
-    if dependencies:
-        run([
-            pixi,
-            "add",
-            "--manifest-path",
-            manifest,
-            *dependencies,
-        ])
-    else:
-        print("No conda dependencies listed.")
 
     if pypi_dependencies:
         run([

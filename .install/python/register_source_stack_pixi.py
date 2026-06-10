@@ -169,6 +169,11 @@ def remove_managed_key(text: str, section: str, key: str) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", default=None)
+    parser.add_argument(
+        "--tasks-only",
+        action="store_true",
+        help="Register source-stack Pixi tasks without activation environment entries.",
+    )
     args = parser.parse_args()
 
     root = Path(args.root).resolve() if args.root else project_root()
@@ -176,18 +181,22 @@ def main() -> None:
 
     text = manifest.read_text()
 
-    text = ensure_section(text, "activation.env")
-    for key in ("LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH"):
-        text = remove_managed_key(text, "activation.env", key)
-    for key, value in activation_env(root).items():
-        text = upsert_key(text, "activation.env", key, value)
+    if not args.tasks_only:
+        text = ensure_section(text, "activation.env")
+        for key in ("LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH"):
+            text = remove_managed_key(text, "activation.env", key)
+        for key, value in activation_env(root).items():
+            text = upsert_key(text, "activation.env", key, value)
 
     text = ensure_section(text, "tasks")
     for key, value in TASKS.items():
         text = upsert_key(text, "tasks", key, value)
 
     manifest.write_text(text)
-    print(f"Registered source-stack tasks and environment in {manifest}")
+    if args.tasks_only:
+        print(f"Registered source-stack tasks in {manifest}")
+    else:
+        print(f"Registered source-stack tasks and environment in {manifest}")
 
 
 if __name__ == "__main__":

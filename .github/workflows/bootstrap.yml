@@ -1,0 +1,91 @@
+name: Bootstrap
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap:
+    name: ${{ matrix.pixi-platform }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 360
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - pixi-platform: linux-64
+            runner: ubuntu-24.04
+          - pixi-platform: linux-aarch64
+            runner: ubuntu-24.04-arm
+          - pixi-platform: osx-64
+            runner: macos-15-intel
+          - pixi-platform: osx-arm64
+            runner: macos-15
+
+    env:
+      PIXI_CACHE_DIR: ${{ runner.temp }}/pixi-cache
+      SOURCE_STACK_AUTO_JOBS_MAX: "4"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare cache directory
+        run: mkdir -p "$PIXI_CACHE_DIR"
+
+      - name: Configure GenFit SSH access
+        env:
+          GENFIT_SSH_KEY: ${{ secrets.GENFIT_SSH_KEY }}
+        run: |
+          if [ -z "$GENFIT_SSH_KEY" ]; then
+            echo "::error title=Missing GENFIT_SSH_KEY::Set a repository secret containing an SSH deploy key or machine-user key that can read git@github.com:MUSE-EXP/Genfit.git."
+            exit 1
+          fi
+
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
+          printf '%s\n' "$GENFIT_SSH_KEY" > "$HOME/.ssh/genfit_key"
+          chmod 600 "$HOME/.ssh/genfit_key"
+          ssh-keyscan github.com >> "$HOME/.ssh/known_hosts"
+          cat > "$HOME/.ssh/config" <<'EOF'
+          Host github.com
+            HostName github.com
+            User git
+            IdentityFile ~/.ssh/genfit_key
+            IdentitiesOnly yes
+          EOF
+          chmod 600 "$HOME/.ssh/config"
+
+      - name: Bootstrap Pixi and XQilla
+        run: ./init.sh
+
+      - name: Check generated platform
+        run: grep -F 'platforms = ["${{ matrix.pixi-platform }}"]' pixi.toml
+
+      - name: Check ROOT version
+        run: |
+          version="$(.bin/pixi run root-config --version)"
+          test "$version" = "6.36.10"
+
+      - name: Check ROOT features
+        run: |
+          .bin/pixi run root-config --features | tee root-features.txt
+          grep -w cxx20 root-features.txt
+          grep -w xml root-features.txt
+          grep -w gdml root-features.txt
+
+      - name: Check XQilla
+        run: .bin/pixi run xqilla -h
+
+      - name: Check source-stack task
+        run: .bin/pixi run source-stack --help
+
+      - name: Build source stack
+        run: .bin/pixi run source-stack --jobs 4
+
+      - name: Verify source stack
+        run: .bin/pixi run verify-source-stack
