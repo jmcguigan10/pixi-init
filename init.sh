@@ -61,17 +61,25 @@ version = "0.1.0"
 [tasks]
 
 [dependencies]
+
+[target.$PLATFORM.dependencies]
+c-compiler = "*"
+cxx-compiler = "*"
 EOF
     echo "Created pixi.toml"
 else
     echo "pixi.toml already exists"
 fi
 
+"$ROOT/.install/shell/register-source-stack-pixi.sh" --root "$ROOT" --tasks-only
 "$ROOT/.install/shell/add-basic.sh"
 "$ROOT/.install/shell/build-xqilla.sh"
 "$ROOT/.install/shell/verify-xqilla.sh"
+"$ROOT/.install/shell/register-source-stack-pixi.sh" --root "$ROOT"
 
 echo
 echo "Bootstrap complete."
 echo "Try:"
 echo "  $PIXI run xqilla -h"
+echo "  $PIXI run source-stack  # builds CLHEP, Geant4, and GenFit; ROOT comes from Pixi"
+echo "  $PIXI run verify-source-stack"
