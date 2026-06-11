@@ -150,7 +150,8 @@ key or machine-user key that can read the GenFit repository.
 If `source-stack` is not registered:
 
 ```bash
-.install/shell/register-source-stack-pixi.sh --root "$PWD"
+.bin/pixi run --manifest-path "$PWD/pixi.toml" python \
+  "$PWD/.install/python/register_source_stack_pixi.py" --root "$PWD"
 ```
 
 If Git or SSH reports an OpenSSL version mismatch, run Git/SSH commands without

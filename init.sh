@@ -61,6 +61,7 @@ version = "0.1.0"
 [tasks]
 
 [dependencies]
+python = ">=3.11,<3.13"
 
 [target.$PLATFORM.dependencies]
 c-compiler = "*"
@@ -71,11 +72,13 @@ else
     echo "pixi.toml already exists"
 fi
 
-"$ROOT/.install/shell/register-source-stack-pixi.sh" --root "$ROOT" --tasks-only
-"$ROOT/.install/shell/add-basic.sh"
-"$ROOT/.install/shell/build-xqilla.sh"
-"$ROOT/.install/shell/verify-xqilla.sh"
-"$ROOT/.install/shell/register-source-stack-pixi.sh" --root "$ROOT"
+PIXI_PYTHON=("$PIXI" run --manifest-path "$ROOT/pixi.toml" python)
+
+"${PIXI_PYTHON[@]}" "$ROOT/.install/python/register_source_stack_pixi.py" --root "$ROOT" --tasks-only
+"${PIXI_PYTHON[@]}" "$ROOT/.install/python/pixi_add_from_yml.py" "$ROOT/.install/cfgs/add-basic.yml" --root "$ROOT"
+"${PIXI_PYTHON[@]}" "$ROOT/.install/python/build_xqilla.py"
+"${PIXI_PYTHON[@]}" "$ROOT/.install/python/verify_xqilla.py"
+"${PIXI_PYTHON[@]}" "$ROOT/.install/python/register_source_stack_pixi.py" --root "$ROOT"
 
 echo
 echo "Bootstrap complete."
